@@ -180,8 +180,7 @@ pub struct PageSubData {
 
 #[cfg(test)]
 mod tests {
-    use std::env::temp_dir;
-    use crate::{download_yumpu_to_pdf, parse_document_id};
+    use crate::parse_document_id;
 
     #[test]
     fn url_parses() {
