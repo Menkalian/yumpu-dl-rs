@@ -3,6 +3,13 @@ name = "yumpu-dl-cli"
 version = "0.1.0"
 edition = "2021"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+authors = ["Kilian Krampf <kilian@mail.menkalian.de>"]
+description = "Command-Line-Tool to download (freely available) documents from `yumpu.com` as pdf"
+keywords = ["scraper", "yumpu", "cli"]
+readme = "README.md"
+
+license = "MIT"
+repository = "https://github.com/menkalian/yumpu-dl-rs"
 
 [dependencies]
+yumpu-dl-lib = { path = "../yumpu-dl-lib" }

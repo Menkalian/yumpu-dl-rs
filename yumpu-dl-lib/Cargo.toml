@@ -4,14 +4,12 @@ version = "0.1.0"
 edition = "2021"
 
 authors = ["Kilian Krampf <kilian@mail.menkalian.de>"]
-description = "Tool to generate rust code with hierarchical string constants from simple file formats"
-keywords = ["generated", "dev-util"]
-categories = ["development-tools", "development-tools::build-utils"]
+description = "Library to download (freely available) documents from `yumpu.com` as pdf"
+keywords = ["scraper", "yumpu"]
 readme = "README.md"
 
 license = "MIT"
-homepage = "https://github.com/menkalian/keystring-generator"
-repository = "https://github.com/menkalian/keystring-generator"
+repository = "https://github.com/menkalian/yumpu-dl-rs"
 
 [dependencies]
 printpdf = { version = "0.5.2", features = ["embedded_images"] }

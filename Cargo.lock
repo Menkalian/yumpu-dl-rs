@@ -1458,6 +1458,9 @@ dependencies = [
 [[package]]
 name = "yumpu-dl-cli"
 version = "0.1.0"
+dependencies = [
+ "yumpu-dl-lib",
+]
 
 [[package]]
 name = "yumpu-dl-lib"
