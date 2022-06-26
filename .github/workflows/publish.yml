@@ -1,0 +1,81 @@
+name: Publish Crates.io
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+    runs-on: self-hosted
+
+    steps:
+      -
+        name: release
+        uses: marvinpinto/action-automatic-releases@latest
+        id: create_release
+        with:
+          repo_token: "${{ secrets.GITHUB_TOKEN }}"
+          prerelease: false
+          draft: false
+          automatic_release_tag: "${{ github.ref }}"
+      -
+        uses: actions/checkout@v3
+      -
+        name: Build native
+        run: cargo build --verbose
+      -
+        name: Run tests
+        run: cargo test --verbose
+      -
+        name: Build Windows
+        run: cross build --target=x86_64-pc-windows-gnu --release --verbose
+      -
+        name: upload windows cli artifact
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./target/x86_64-pc-windows-gnu/release/yumpu-dl-cli.exe
+          asset_name: yumpu-dl-cli-amd64.exe
+          asset_content_type: application/vnd.microsoft.portable-executable
+      -
+        name: upload windows gui artifact
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./target/x86_64-pc-windows-gnu/release/yumpu-dl-gui.exe
+          asset_name: yumpu-dl-gui-amd64.exe
+          asset_content_type: application/vnd.microsoft.portable-executable
+      -
+        name: Build Linux
+        run: cross build --target=x86_64-unknown-linux-gnu --release --verbose
+      -
+        name: upload linux cli artifact
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./target/x86_64-unknown-linux-gnu/release/yumpu-dl-cli
+          asset_name: yumpu-dl-cli-amd64
+          asset_content_type: application/octet-stream
+      -
+        name: upload linux gui artifact
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./target/x86_64-unknown-linux-gnu/release/yumpu-dl-gui
+          asset_name: yumpu-dl-gui-amd64
+          asset_content_type: application/octet-stream
+      -
+        name: Publish to crates.io
+        run: cargo publish --verbose --token ${{ secrets.CRATES_IO_TOKEN }}
