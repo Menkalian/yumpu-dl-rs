@@ -31,29 +31,6 @@ jobs:
         name: Run tests
         run: cargo test --verbose
       -
-        name: Build Windows
-        run: cross build --target=x86_64-pc-windows-gnu --release --verbose
-      -
-        name: upload windows cli artifact
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./target/x86_64-pc-windows-gnu/release/yumpu-dl-cli.exe
-          asset_name: yumpu-dl-cli-amd64.exe
-          asset_content_type: application/vnd.microsoft.portable-executable
-      -
-        name: upload windows gui artifact
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./target/x86_64-pc-windows-gnu/release/yumpu-dl-gui.exe
-          asset_name: yumpu-dl-gui-amd64.exe
-          asset_content_type: application/vnd.microsoft.portable-executable
-      -
         name: Build Linux
         run: cross build --target=x86_64-unknown-linux-gnu --release --verbose
       -
@@ -76,6 +53,32 @@ jobs:
           asset_path: ./target/x86_64-unknown-linux-gnu/release/yumpu-dl-gui
           asset_name: yumpu-dl-gui-amd64
           asset_content_type: application/octet-stream
+      -
+        name: Clean output
+        run: cargo clean
+      -
+        name: Build Windows
+        run: cross build --target=x86_64-pc-windows-gnu --release --verbose
+      -
+        name: upload windows cli artifact
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./target/x86_64-pc-windows-gnu/release/yumpu-dl-cli.exe
+          asset_name: yumpu-dl-cli-amd64.exe
+          asset_content_type: application/vnd.microsoft.portable-executable
+      -
+        name: upload windows gui artifact
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./target/x86_64-pc-windows-gnu/release/yumpu-dl-gui.exe
+          asset_name: yumpu-dl-gui-amd64.exe
+          asset_content_type: application/vnd.microsoft.portable-executable
       -
         name: Publish to crates.io
         run: cargo publish --verbose --token ${{ secrets.CRATES_IO_TOKEN }}
