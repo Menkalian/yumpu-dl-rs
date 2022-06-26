@@ -8,7 +8,7 @@ use std::fs::{create_dir_all, File, read_dir, remove_dir_all};
 use std::io;
 use std::io::{BufWriter, Write};
 use std::ops::Not;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use printpdf::{Image, ImageTransform, Mm, PdfDocument};
 use printpdf::image_crate::codecs::jpeg::JpegDecoder;
 use regex::Regex;
@@ -23,6 +23,7 @@ pub trait Logger {
     fn log_message(&self, msg: &str);
 }
 
+#[derive(Debug)]
 struct NoOpLogger {}
 
 impl Logger for NoOpLogger {
@@ -42,7 +43,8 @@ pub enum Error {
 }
 
 pub async fn download_yumpu_to_pdf(yumpu_url: &str, target_path: &PathBuf, logger: Option<&dyn Logger>) -> Result<(), Error> {
-    let log = logger.ok_or_else(|| NoOpLogger {}).unwrap();
+    let noop_logger = NoOpLogger {};
+    let log = logger.unwrap_or(&noop_logger);
 
     let document_id = parse_document_id(yumpu_url)?;
     log.log_message(&format!("Loading data for document {}", document_id));
@@ -62,7 +64,7 @@ pub async fn download_yumpu_to_pdf(yumpu_url: &str, target_path: &PathBuf, logge
     download_yumpu_pages_as_jpg(yumpu_url, &img_dir, Some(log)).await?;
 
     // create pdf
-    log.log_message(&format!("Creating pdf..."));
+    log.log_message("Creating pdf...");
     let page_size = [doc_data.width as f64, doc_data.height as f64];
     let (doc, page1, layer1) = PdfDocument::new(
         doc_data.title,
@@ -82,25 +84,27 @@ pub async fn download_yumpu_to_pdf(yumpu_url: &str, target_path: &PathBuf, logge
         let mut image_file = File::open(img_dir.join(format!("{}.jpg", count + 1))).map_err(|e| IoError(Some(e)))?;
         let image = Image::try_from(
             JpegDecoder::new(&mut image_file)
-                .map_err(|e| ImageError(e))?
-        ).map_err(|e| ImageError(e))?;
+                .map_err(ImageError)?
+        ).map_err(ImageError)?;
         image.add_to_layer(current_layer.clone(), ImageTransform::default());
         log.increment_progression();
     }
     log.log_message("Saving PDF-Document...");
     let mut out_file = File::create(&target_path).map_err(|e| IoError(Some(e)))?;
-    doc.save(&mut BufWriter::new(&mut out_file)).map_err(|e| PdfError(e))?;
+    doc.save(&mut BufWriter::new(&mut out_file)).map_err(PdfError)?;
     log.increment_progression();
 
     remove_dir_all(img_dir).map_err(|e| IoError(Some(e)))?;
     Ok(())
 }
 
-pub async fn download_yumpu_pages_as_jpg(yumpu_url: &str, folder_path: &PathBuf, logger: Option<&dyn Logger>) -> Result<(), Error> {
-    let log = logger.ok_or_else(NoOpLogger {}).unwrap();
+pub async fn download_yumpu_pages_as_jpg(yumpu_url: &str, folder_path: &Path, logger: Option<&dyn Logger>) -> Result<(), Error> {
+    let noop_logger = NoOpLogger {};
+    let log = logger.unwrap_or(&noop_logger);
+
     let document_id = parse_document_id(yumpu_url)?;
     let doc_data = load_document_desc(document_id).await?.document;
-    create_dir_all(folder_path.as_path()).map_err(|e| IoError(Some(e)))?;
+    create_dir_all(folder_path).map_err(|e| IoError(Some(e)))?;
 
     if log.is_initialized().not() {
         log.log_message(&format!("Downloading images for document \"{}\" with ID {}", doc_data.title, doc_data.id));
@@ -115,9 +119,9 @@ pub async fn download_yumpu_pages_as_jpg(yumpu_url: &str, folder_path: &PathBuf,
             .get(format!("{}{}?{}", &doc_data.base_path, page.images.large, page.qss.large))
             .header("User-Agent", "reqwest-rs/0.11.11")
             .send()
-            .await.map_err(|e| HttpError(e))?
+            .await.map_err(HttpError)?
             .bytes()
-            .await.map_err(|e| HttpError(e))?;
+            .await.map_err(HttpError)?;
         image.write_all(data.as_ref()).unwrap();
         log.increment_progression();
     }
@@ -130,16 +134,16 @@ pub async fn load_document_desc(yumpu_doc_id: u64) -> Result<JsonResponse, Error
         .get(&url)
         .header("User-Agent", "reqwest-rs/0.11.11")
         .send()
-        .await.map_err(|e| HttpError(e))?
+        .await.map_err(HttpError)?
         .json()
-        .await.map_err(|e| HttpError(e))?;
+        .await.map_err(HttpError)?;
     Ok(response)
 }
 
 pub fn parse_document_id(yumpu_url: &str) -> Result<u64, Error> {
     let regex = Regex::new("http(s)?://www.yumpu.com/\\S+/\\S+/\\S+/(?P<id>\\d+)/\\S+").unwrap();
     let captures = regex.captures(yumpu_url).ok_or(InvalidUrl)?;
-    Ok(captures.name("id").ok_or(InvalidUrl)?.as_str().parse().map_err(|_| InvalidUrl)?)
+    captures.name("id").ok_or(InvalidUrl)?.as_str().parse().map_err(|_| InvalidUrl)
 }
 
 #[derive(Debug, Deserialize)]
