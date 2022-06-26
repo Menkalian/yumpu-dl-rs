@@ -1,0 +1,6 @@
+[workspace]
+members = [
+    "yumpu-dl-lib",
+    "yumpu-dl-gui",
+    "yumpu-dl-cli",
+]
