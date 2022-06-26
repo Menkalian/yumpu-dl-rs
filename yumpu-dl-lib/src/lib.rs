@@ -42,7 +42,7 @@ pub enum Error {
 }
 
 pub async fn download_yumpu_to_pdf(yumpu_url: &str, target_path: &PathBuf, logger: Option<&dyn Logger>) -> Result<(), Error> {
-    let log = logger.ok_or_else(NoOpLogger {}).unwrap();
+    let log = logger.ok_or_else(|| NoOpLogger {}).unwrap();
 
     let document_id = parse_document_id(yumpu_url)?;
     log.log_message(&format!("Loading data for document {}", document_id));
