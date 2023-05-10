@@ -13,3 +13,4 @@ repository = "https://github.com/menkalian/yumpu-dl-rs"
 
 [dependencies]
 yumpu-dl-lib = { path = "../yumpu-dl-lib" }
+tokio = { version = "1.28.1", features = ["full"] }
